@@ -5,12 +5,12 @@ import mongoose from 'mongoose';
 import dialogflow from '@google-cloud/dialogflow';
 import { WebhookClient } from 'dialogflow-fulfillment';
 import { Suggestion } from "dialogflow-fulfillment";
-import { Card } from "dialogflow-fulfillment";
+import { Card, Payload } from "dialogflow-fulfillment";
 
 // Initialized App
 const app = express();
-app.use(cors())
 app.use(express.json())
+app.use(cors())
 
 // PORT
 const PORT = process.env.PORT || 4000;
@@ -35,49 +35,48 @@ mongoose.connect(`mongodb+srv://PizzaOrderingChatbot:PizzaOrderingChatbot@pizzao
 
 // Talk to Chatbot Webhook Start
 // Setting Of Project
-app.post("/talktochatbot", (req, res) => {
+app.post("/talktochatbot", async (req, res) => {
     const projectId = "pizza-ordering-app-nqqj"
     const sessionId = "session123"
     const query = req.body.text
-    const languageCode = "en-US"
-
-    //Print upcoming text
-    console.log("Query ", query, req.body);
+    const languageCode  = "en-US"
 
     // The path to identify the agent that owns the created intent.
     const sessionPath = sessionClient.projectAgentSessionPath(
         projectId,
-        sessionId,
-
+        sessionId
     )
 
-    // The text query request.
-
+    // The text query request.  
     const request = {
         session: sessionPath,
         queryInput: {
             text: {
                 text: query,
-                languageCode: languageCode,
+                languageCode: languageCode
             },
         },
-    };
+    }
 
-    try {
-        const responses = sessionClient.detectIntent(request);
-        // console.log("responses: ", responses);
-        // console.log("resp: ", responses[0].queryResult.fulfillmentText);    
+    try
+    {
+        const response = await sessionClient.detectIntent(request);
+        // console.log("Response", response)
+        console.log("Response", response[0].queryResult.fulfillmentText)
+    
         res.send({
-            text: responses[0].queryResult.fulfillmentText
-        });
-
-    } catch (e) {
-        console.log("error while detecting intent: ", e)
+            text: response[0].queryResult.fulfillmentText
+        })
+    }
+    catch(e)
+    {
+        console.log("Error while detecting Intent ", e)
     }
 
 })
-// Talk to Chatbot Webhook End
 
+// Talk to Chatbot Webhook End
+// pizza-ordering-app-nqqj
 
 
 
@@ -89,6 +88,12 @@ app.post("/webhook", (req, res) => {
 
     // Weclome Intent/Function
     function welcome(agent) {
+        agent.add(new Payload("PLATFORM_UNSPECIFIED", {
+            "textMessage": [
+                "Here is you full menu"
+            ]
+        }, {rawPayload: true, sendAsMessage: true}))
+       
         agent.add(new Card({
             title: "Pizza Ordering Restaurant",
             imageUrl: "https://firebasestorage.googleapis.com/v0/b/reactaideveloper.appspot.com/o/home2.svg?alt=media&token=70058c35-6d05-4937-bb23-aefd86178caa",
